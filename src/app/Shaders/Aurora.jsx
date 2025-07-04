@@ -113,48 +113,44 @@ const AuroraMaterial = shaderMaterial(
     return mix(xm1, xm2, w.y);
   }
 
- void main() {
-  vec2 fragCoord = vUv * iResolution.xy;
-  vec2 uv1 = (fragCoord - 0.5 * iResolution.xy) / iResolution.y;
-  uv1.y -= 0.2; // move stars down
+  void main() {
+    vec2 fragCoord = vUv * iResolution.xy;
+    vec2 uv1 = (fragCoord - 0.5 * iResolution.xy) / iResolution.y;
+    vec2 M = (iMouse - iResolution.xy * 0.5) / iResolution.y;
 
-  vec2 M = (iMouse - iResolution.xy * 0.5) / iResolution.y;
+    float t = iTime * starSpeed;
+    uv1 += M * 4.0;
+    uv1 *= Rot(t);
 
-  float t = iTime * starSpeed;
-  uv1 += M * 4.0;
-  uv1 *= Rot(t);
+    vec3 col1 = vec3(0.0);
+    for (float i = 0.0; i < 1.0; i += 1.0 / starLayers) {
+      float depth = fract(i + t);
+      float scale = mix(20.0, 0.5, depth);
+      float fade = depth * smoothstep(1.0, 0.9, depth);
+      col1 += StarLayer(uv1 * scale + i * 453.2 - M) * fade;
+    }
+    col1 = pow(col1, vec3(0.4545));
 
-  vec3 col1 = vec3(0.0);
-  for (float i = 0.0; i < 1.0; i += 1.0 / starLayers) {
-    float depth = fract(i + t);
-    float scale = mix(20.0, 0.5, depth);
-    float fade = depth * smoothstep(1.0, 0.9, depth);
-    col1 += StarLayer(uv1 * scale + i * 453.2 - M) * fade;
+    vec2 uv = fragCoord / iResolution.xy;
+    uv.x *= iResolution.x / iResolution.y;
+    uv.y *= auroraIntensity;
+
+    float n = 0.0;
+    n += 0.5 * perlinNoise(uv * 1.0 - iTime * auroraSpeed);
+    n += 0.25 * perlinNoise(uv * 2.0 - iTime * auroraSpeed * 1.5);
+    n += 0.125 * perlinNoise(uv * 4.0 - iTime * auroraSpeed * 2.5);
+    n += 0.0625 * perlinNoise(uv * 8.0 - iTime * auroraSpeed * 4.0);
+
+    float intensity = smoothstep(0.1, 0.9, uv.y);
+    intensity *= sin(uv.y * 10.0 + n * 5.0 - 0.5) * 0.5 + 0.5;
+
+    vec3 color = mix(color1, color2, uv.x);
+    color *= intensity;
+
+    color = mix(bgColor, color + col1, intensity);
+
+    gl_FragColor = vec4(color, 1.0);
   }
-  col1 = pow(col1, vec3(0.4545));
-
-  vec2 uv = fragCoord / iResolution.xy;
-  uv.y -= 0.2; // move aurora down
-  uv.x *= iResolution.x / iResolution.y;
-  uv.y *= auroraIntensity;
-
-  float n = 0.0;
-  n += 0.5 * perlinNoise(uv * 1.0 - iTime * auroraSpeed);
-  n += 0.25 * perlinNoise(uv * 2.0 - iTime * auroraSpeed * 1.5);
-  n += 0.125 * perlinNoise(uv * 4.0 - iTime * auroraSpeed * 2.5);
-  n += 0.0625 * perlinNoise(uv * 8.0 - iTime * auroraSpeed * 4.0);
-
-  float intensity = smoothstep(0.1, 0.9, uv.y);
-  intensity *= sin(uv.y * 10.0 + n * 5.0 - 0.5) * 0.5 + 0.5;
-
-  vec3 color = mix(color1, color2, uv.x);
-  color *= intensity;
-
-  color = mix(bgColor, color + col1, intensity);
-
-  gl_FragColor = vec4(color, 1.0);
-}
-
   `
 );
 
